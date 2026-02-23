@@ -1,29 +1,16 @@
-# Dockerfile for Render (Docker environment)
-# Assumes you run a Python web API (e.g., FastAPI) via Uvicorn.
-# Update the CMD line at the bottom if your entrypoint/module is different.
-
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Minimal OS deps commonly needed for OpenCV / image processing
+# System deps for opencv
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 \
-    libglib2.0-0 \
+    libglib2.0-0 libsm6 libxext6 libxrender1 \
  && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY . /app
+COPY . .
 
-# Render provides PORT at runtime
-ENV PYTHONUNBUFFERED=1
-
-# --- START COMMAND ---
-# Default: FastAPI file main.py with app variable named "app"
-# If your file is api.py, change to: uvicorn api:app ...
-# If your variable is "application", change to: uvicorn main:application ...
-CMD ["bash", "-lc", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Render uses PORT env var
+CMD ["bash", "-lc", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
